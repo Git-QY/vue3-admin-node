@@ -1,0 +1,13 @@
+{
+  "name": "vue-admin",
+  "version": "1.0.0",
+  "description": "vue-admin API文档",
+  "title": "vue-admin API Doc",
+  "url": "http://localhost:3000",
+  "sampleUrl": "http://localhost:3000",
+  "forceLanguage": "zh-cn",
+  "template": {
+      "withCompare": true,
+      "withGenerator": true
+  }
+}
