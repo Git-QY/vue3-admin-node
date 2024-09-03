@@ -6,9 +6,11 @@
     "start": "set NODE_ENV=dev&&nodemon ./bin/www",
     "test": "set NODE_ENV=test&&nodemon ./bin/www",
     "prod": "set NODE_ENV=prod&&nodemon ./bin/www",
+    "build": "set NODE_ENV=dev&&nodemon ./bin/www",
     "apidoc": "apidoc -i routes/ apidoc/ -o public/apidoc/"
   },
   "dependencies": {
+    "@vercel/node": "^3.2.10",
     "apidoc": "^1.2.0",
     "axios": "^1.6.8",
     "connect-multiparty": "^2.2.0",
