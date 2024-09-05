@@ -1,5 +1,4 @@
 const mongoose = require('mongoose')
-const { db1Connection, db2Connection } = require('../index')
 const { body, validationResult } = require('express-validator')
 const schemaRules = {
   room: String,
@@ -31,9 +30,9 @@ const aiRoomMessageSchema = new mongoose.Schema({
 const aiRoomValidationRules = () => [body('name').notEmpty().withMessage('房间名称不能为空')]
 
 module.exports = {
-  AiRoom: db2Connection.model('AiRoom', aiRoomSchema),
+  AiRoom: mongoose.model('AiRoom', aiRoomSchema),
   aiRoomValidationRules,
-  AiRoomMessage: db2Connection.model('AiRoomMessage', aiRoomMessageSchema),
-  Chat: db1Connection.model('Chat', new mongoose.Schema(schemaRules)),
+  AiRoomMessage: mongoose.model('AiRoomMessage', aiRoomMessageSchema),
+  Chat: mongoose.model('Chat', new mongoose.Schema(schemaRules)),
   validationResult,
 }

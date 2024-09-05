@@ -12,6 +12,3 @@ dist
 dist-ssr
 *.local
 public/uploads
-
-
-.vercel

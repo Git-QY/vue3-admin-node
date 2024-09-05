@@ -1,6 +1,5 @@
 // 日志
 const mongoose = require('mongoose')
-const { db1Connection } = require('../index')
 const { body, validationResult } = require('express-validator')
 const schemaRules = {
   id: { type: String },
@@ -15,4 +14,4 @@ const schemaRules = {
   updateTime: { type: Date, default: Date.now }, // 更新时间
 }
 
-module.exports = { Log: db1Connection.model('Log', new mongoose.Schema(schemaRules)), validationResult }
+module.exports = { Log: mongoose.model('Log', new mongoose.Schema(schemaRules)), validationResult }

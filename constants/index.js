@@ -9,4 +9,9 @@ module.exports = class Constants {
   static XINGHUO = {
     API_PASSWORD: 'ZIpFsaJXYQANiYrrivKB:plStZixgUreBCHDVfyQf',
   }
+  // mongodb账号密码
+  static MONGO_DB = {
+    USER: 'qinyu',
+    PASSWORD: '13512319102.',
+  }
 }

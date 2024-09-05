@@ -1,6 +1,4 @@
 const mongoose = require('mongoose')
-const { db1Connection } = require('../index')
-
 // 定义字段验证规则
 const { body, validationResult } = require('express-validator')
 
@@ -25,4 +23,4 @@ const LayoutSchema = {
   updateTime: { type: Number, default: Date.now, comment: '更新时间' },
 }
 // 导出布局模式和验证结果
-module.exports = { Layout: db1Connection.model('Layout', new mongoose.Schema(LayoutSchema)), validationResult }
+module.exports = { Layout: mongoose.model('Layout', new mongoose.Schema(LayoutSchema)), validationResult }

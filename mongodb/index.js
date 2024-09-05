@@ -1,46 +1,14 @@
-// const mongoose = require('mongoose')
-// mongoose.set('strictQuery', true) // 开启严格模式
-// // mongoose.connect("mongodb://127.0.0.1:27017/vue3admin", {});
-// mongoose.connect('mongodb+srv://qinyu:13512319102.@qycluster.xsk1hfo.mongodb.net/vue3admin')
-// const db = mongoose.connection
-
-// db.on('error', console.error.bind(console, 'connection error:'))
-// db.once('open', res => console.log('db ok'))
-// mongodb+srv://595870773:hAOxUTXHyxNApZfL@cluster0.luetbep.mongodb.net/
-
-var mongoose = require('mongoose')
-
-const connections = [
-  // { name: 'db1Connection', url: 'mongodb://127.0.0.1:27017' }, // 本地
-  // { name: 'db2Connection', url: 'mongodb://127.0.0.1:27017' }, // 本地
-  { name: 'db1Connection', url: 'mongodb+srv://qinyu:13512319102.@qycluster.xsk1hfo.mongodb.net' }, // 线上
-  // { name: 'db2Connection', url: 'mongodb+srv://yuqin:13512319102.@cluster0.eb5ss.mongodb.net' }, // 线上
-  { name: 'db2Connection', url: 'mongodb+srv://qinyu:13512319102.@qycluster.xsk1hfo.mongodb.net' }, // 线上
-]
-
+const Constants = require('../constants')
+// 导入 mongoose 模块
+const mongoose = require('mongoose')
+// 设置默认 mongoose 连接
+const mongoDB = `mongodb+srv://${Constants.MONGO_DB.USER}:${Constants.MONGO_DB.PASSWORD}@qycluster.xsk1hfo.mongodb.net`
+mongoose.connect(mongoDB)
+// 让 mongoose 使用全局 Promise 库
 mongoose.Promise = global.Promise
-
-// 创建连接并导出
-const connectionObjects = {}
-connections.forEach(connection => retryConnect(connection))
-// 重试机制函数 能重试次数
-function retryConnect(connection, retryCount = 3) {
-  const name = connection.name
-  connectionObjects[name] = mongoose.createConnection(connection.url)
-  connectionObjects[name].on('connected', function () {
-    console.log(`Mongoose 连接成功，连接到 ${name}: ${connection.url}`)
-  })
-  connectionObjects[name].on('error', function (err) {
-    console.log(`Mongoose 连接错误 ${name}: ${err}`)
-    if (retryCount > 0) {
-      console.log('🚀 ~ retryCount:', retryCount)
-      console.log(`Mongoose 正在重试连接 ${name}...`)
-      setTimeout(() => retryConnect(connection, retryCount - 1), 5000)
-    } else {
-      console.log(`Mongoose 连接失败 ${name}`)
-      // process.exit(1)
-    }
-  })
-}
-
-module.exports = connectionObjects
+// 取得默认连接
+const db = mongoose.connection
+// 数据量链接成功
+db.on('connected', () => console.log('mongodb 数据库连接成功！'))
+// 将连接与错误事件绑定（以获得连接错误的提示）
+db.on('error', console.error.bind(console, 'MongoDB 连接错误：'))

@@ -1,7 +1,5 @@
 const mongoose = require('mongoose')
-const { db1Connection } = require('../index')
 const { body, validationResult } = require('express-validator') // 引入验证规则
-
 const schemaRules = {
   id: { type: String }, // 用户ID，必需且唯一
   username: {
@@ -36,7 +34,7 @@ const schemaRules = {
 const userSchema = new mongoose.Schema(schemaRules)
 
 // 创建用户模型
-const User = db1Connection.model('User', userSchema)
+const User = mongoose.model('User', userSchema)
 
 // 预校验规则
 const userValidationRules = () => [

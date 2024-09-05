@@ -1,5 +1,4 @@
 const mongoose = require('mongoose')
-const { db1Connection } = require('../index')
 const { body, validationResult } = require('express-validator') // 引入验证规则
 // 角色
 const schemaRules = {
@@ -21,7 +20,7 @@ const schemaRules = {
 }
 
 // 创建用户模型
-const Role = db1Connection.model('Role', new mongoose.Schema(schemaRules))
+const Role = mongoose.model('Role', new mongoose.Schema(schemaRules))
 
 // 预校验规则
 const roleValidationRules = () => [

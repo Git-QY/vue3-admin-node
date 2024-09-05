@@ -1,5 +1,4 @@
 const mongoose = require('mongoose')
-const { db1Connection } = require('../index')
 const { body, validationResult } = require('express-validator')
 
 // 部门
@@ -19,7 +18,7 @@ const deptSchemaRules = {
 }
 
 // 创建部门模型
-const Dept = db1Connection.model('Dept', new mongoose.Schema(deptSchemaRules))
+const Dept = mongoose.model('Dept', new mongoose.Schema(deptSchemaRules))
 
 // 预校验规则
 const deptValidationRules = () => [

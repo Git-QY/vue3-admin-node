@@ -1,7 +1,5 @@
 // 面试题库
 const mongoose = require('mongoose')
-const { db1Connection, db2Connection } = require('../index')
-
 const { body, validationResult } = require('express-validator')
 const typeEnum = ['single_choice', 'multiple_choice', 'fill_in_the_blank', 'true_or_false', 'short_answer', 'essay']
 
@@ -55,8 +53,8 @@ const answerValidationRules = () => [
 ]
 
 module.exports = {
-  Interview: db2Connection.model('Interview', new mongoose.Schema(schemaRules)),
-  Answer: db2Connection.model('Answer', new mongoose.Schema(answerSchemaRules)),
+  Interview: mongoose.model('Interview', new mongoose.Schema(schemaRules)),
+  Answer: mongoose.model('Answer', new mongoose.Schema(answerSchemaRules)),
   validationResult,
   interviewValidationRules,
   answerValidationRules,
