@@ -13,6 +13,7 @@ const IP2Region = require('ip2region').default
 const { generateUUID, sendMail } = require('../utils/index')
 const { createToken, verifyToken } = require('../utils/token')
 const { encryptHash, hashWithSalt } = require('../utils/auth')
+
 /* GET home page. */
 router.get('/', function (req, res, next) {
   res.render('index', { title: '可以访问用户的接口' })
@@ -191,46 +192,6 @@ router.post('/login/email', async (req, res) => {
     }
   }
 })
-// 第三方登录
-const axios = require('axios')
-const Constants = require('../constants')
-// 目前有个问题就是如果注册的邮箱和第三方登录的邮箱相同 怎么处理
-// 提示这个邮箱已经注册
-router.post('/login/third', async (req, res) => {
-  const { type, code } = req.body
-  if (!type || !code) return res.send({ code: 500, message: '缺少必填参数' })
-  try {
-    const response = await axios.post('https://gitee.com/oauth/token', {
-      grant_type: 'authorization_code',
-      code,
-      client_id: Constants.GITEE_AUTH_PARAMS.client_id,
-      redirect_uri: `${process.env.VITE_CLIENT_BASE_URL}/loginWithGitee.html`,
-      client_secret: Constants.GITEE_AUTH_PARAMS.client_secret,
-    })
-    if (response.status !== 200) return res.send({ code: 500, error })
-    const { access_token } = response.data
-    const userInfo = await axios.get(`https://gitee.com/api/v5/user?access_token=${access_token}`)
-    if (userInfo.status !== 200) return res.send({ code: 500, error })
-    const { name, avatar_url, email } = userInfo.data || {}
-    // 当前查询的第三方用户如果存在邮箱 提示邮箱已在当前系统中存在请使用邮箱登录
-    if (!email) return res.send({ code: 500, message: '第三方账户邮箱不存在,不能直接创建账号' })
-    const findEmailUser = await User.findOne({ email })
-    if (findEmailUser) return res.send({ code: 500, message: '邮箱已存在' })
-    const findNameUser = await User.findOne({ username: name })
-    const thirdUser = await User.create({
-      id: generateUUID(),
-      username: findNameUser ? `${name}${$generateUUID()}` : name,
-      password: hashWithSalt(encryptHash('123456')),
-      avatar: avatar_url,
-      status: 1,
-      email,
-    })
-    let token = createToken({ login: true, name: thirdUser.username, id: thirdUser.id })
-    res.send({ code: 200, message: '登录成功', data: { token, userInfo: thirdUser } })
-  } catch (error) {
-    res.send({ code: 500, error })
-  }
-})
 // 新增用户
 router.post('/add', userValidationRules(), async (req, res) => {
   const errors = validationResult(req)
@@ -363,5 +324,139 @@ router.get('/menus/:userId', async (req, res) => {
     res.send({ code: 500, message: error })
   }
 })
+// 第三方登录
+const axios = require('axios')
+const Constants = require('../constants')
+// 目前有个问题就是如果注册的邮箱和第三方登录的邮箱相同 怎么处理
+// 提示这个邮箱已经注册
+router.post('/login/third', async (req, res) => {
+  const { type, code } = req.body
+  console.log('🚀 ~ router.post ~ req.body:', req.body)
+  if (!type || !code) return res.send({ code: 500, message: '缺少必填参数' })
+  try {
+    const response = await axios.post('https://gitee.com/oauth/token', {
+      grant_type: 'authorization_code',
+      code,
+      client_id: Constants.GITEE_AUTH_PARAMS.client_id,
+      redirect_uri: Constants.GITEE_AUTH_PARAMS.redirect_uri,
+      client_secret: Constants.GITEE_AUTH_PARAMS.client_secret,
+    })
+    console.log('🚀 ~ router.post ~ response:', response)
+    const { access_token } = response.data
+    const access_token_response = await axios.get(`https://gitee.com/api/v5/user?access_token=${access_token}`)
+    const { name, avatar_url, email } = access_token_response.data || {}
+    // 当前查询的第三方用户如果存在邮箱 提示邮箱已在当前系统中存在请使用邮箱登录
+    if (!email) return res.send({ code: 500, message: '第三方账户邮箱不存在,不能直接创建账号' })
+    const findEmailUser = await User.findOne({ email })
+    if (findEmailUser) return res.send({ code: 500, message: '邮箱已存在' })
+    const findNameUser = await User.findOne({ username: name })
+    if (findNameUser) {
+      await successLoginLog(req, findNameUser)
+      const loginData = await successLogin(findNameUser)
+      res.send(loginData)
+    } else {
+      const thirdUser = await User.create({
+        id: generateUUID(),
+        username: findNameUser ? `${name}${$generateUUID()}` : name,
+        password: hashWithSalt(encryptHash('123456')),
+        avatar: avatar_url,
+        status: 1,
+        email,
+      })
+      await successLoginLog(req, thirdUser)
+      let token = createToken({ login: true, name: thirdUser.username, id: thirdUser.id })
+      res.send({ code: 200, message: '登录成功', data: { token, userInfo: thirdUser } })
+    }
+  } catch (error) {
+    res.send({ code: 500, message: error.response.data.error_description || error })
+  }
+})
+// 微信扫码登录 2种方法 1 后台返回二维码轮询 2 ifame内嵌二维码
+/**
+ * 1 通过code获取access_token
+ */
+router.post('/login/wechat', async (req, res) => {
+  const { code } = req.body
+  if (!code) return res.send({ code: 500, message: '缺少必填参数' })
+  try {
+    const access_token_response = await axios.get(
+      `https://api.weixin.qq.com/sns/oauth2/access_token?appid=${Constants.WECHAT_AUTH_PARAMS.APPID}&secret=${Constants.WECHAT_AUTH_PARAMS.SECRET}&code=${code}&grant_type=authorization_code`,
+    )
+    const { access_token, openid } = access_token_response.data || {}
+    // 通过openid查询用户信息
+    const wechatUser = await User.findOne({ openid })
+    if (wechatUser) {
+      await successLoginLog(req, wechatUser)
+      const loginData = await successLogin(wechatUser)
+      res.send(loginData)
+    } else {
+      // 目前的逻辑是直接创建一个账号就行 不需要绑定自己项目的账号
+      // 通过access_token和openid查询用户信息
+      const userInfon_response = await axios.get(`https://api.weixin.qq.com/sns/userinfo?access_token=${access_token}&openid=${openid}`)
+      const { nickname, headimgurl, unionid } = userInfon_response.data
+      const newUser = await User.create({
+        id: generateUUID(),
+        username: unionid,
+        password: hashWithSalt(encryptHash('123456')),
+        avatar: headimgurl,
+        status: 1,
+        openid,
+        nickname,
+      })
+      await successLoginLog(req, newUser)
+      let token = createToken({ login: true, name: newUser.username, id: newUser.id })
+      res.send({ code: 200, message: '登录成功', data: { token, userInfo: newUser } })
+    }
+  } catch (error) {
+    res.send({ code: 500, message: error.message || '微信登录失败' })
+  }
+})
 
+const successLogin = user => {
+  return new Promise(async (resolve, reject) => {
+    try {
+      const { username, id, status } = user
+      if (status == 0) resolve({ code: 403, message: '该用户已被禁用' })
+      let token = createToken({ login: true, name: username, id })
+      // 新增维护token表
+      user.deviceId = '123456'
+      user.isDevice = true
+      user.isMultiple = false
+      // 需求
+      // 同一设备限制一个账号
+      let params = []
+      if (user.isDevice) params.push({ deviceId: user.deviceId })
+      if (user.isMultiple) params.push({ userId: user.id })
+      // 查询存在deviceId和userId的共集 直接删除
+      if (!user.isAdmin) await Token.deleteMany({ $and: params })
+      Token.create({ id: generateUUID(), userId: user.id, deviceId: user.deviceId, token, expiresTime: expiresIn })
+      resolve({ code: 200, message: '登录成功', data: { token, userInfo: user } })
+    } catch (error) {
+      reject(error)
+    }
+  })
+}
+const successLoginLog = (req, user) => {
+  return new Promise(async (resolve, reject) => {
+    try {
+      const { method } = req
+      const ip = await getIp()
+      const query = new IP2Region()
+      const address = query.search(ip)
+      await Log.create({
+        id: $generateUUID(),
+        ip,
+        address,
+        url: '/users/login',
+        method,
+        createTime: new Date(),
+        updateTime: new Date(),
+        createById: user.id,
+      })
+      resolve('登录日志创建成功')
+    } catch (error) {
+      reject(error)
+    }
+  })
+}
 module.exports = router

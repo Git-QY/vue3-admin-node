@@ -2,7 +2,8 @@ const Constants = require('../constants')
 // 导入 mongoose 模块
 const mongoose = require('mongoose')
 // 设置默认 mongoose 连接
-const mongoDB = `mongodb+srv://${Constants.MONGO_DB.USER}:${Constants.MONGO_DB.PASSWORD}@qycluster.xsk1hfo.mongodb.net`
+// const mongoDB = `mongodb+srv://${Constants.MONGO_DB.USER}:${Constants.MONGO_DB.PASSWORD}@qycluster.xsk1hfo.mongodb.net`
+const mongoDB = `mongodb://127.0.0.1:27017`
 mongoose.connect(mongoDB)
 // 让 mongoose 使用全局 Promise 库
 mongoose.Promise = global.Promise

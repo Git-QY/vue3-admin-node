@@ -10,6 +10,8 @@ const schemaRules = {
     maxlength: 50,
   }, // 用户名，必需且唯一
   password: { type: String, required: true }, // 密码，必需
+  // 昵称
+  nickname: { type: String, default: '' },
   createTime: { type: Date, default: Date.now }, // 创建时间
   updateTime: { type: Date, default: Date.now }, // 最后更新时间
   // 用户备注
@@ -28,6 +30,8 @@ const schemaRules = {
   isAdmin: { type: Boolean, default: false },
   // 所属部门
   deptId: { type: String },
+  // 微信openid
+  openid: { type: String, default: '' },
 }
 
 // 定义用户模型
@@ -64,7 +68,15 @@ const userValidationRules = () => [
   // 状态
   body('state').optional().isIn([0, 1]).withMessage('状态值不合法'),
   // 性别
-  body('sex').notEmpty().withMessage('性别不能为空').bail().isString().withMessage('性别必须为字符串').bail().isIn(['0', '1', '2']).withMessage('性别值不合法'),
+  body('sex')
+    .notEmpty()
+    .withMessage('性别不能为空')
+    .bail()
+    .isString()
+    .withMessage('性别必须为字符串')
+    .bail()
+    .isIn(['0', '1', '2'])
+    .withMessage('性别值不合法'),
   // 角色id集合
   body('roleIds').optional().isArray().withMessage('角色id集合必须为数组'),
   // 头像
